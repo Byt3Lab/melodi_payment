@@ -1,0 +1,85 @@
+<div class="container-fluid py-3">
+  <!-- Header -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+      <h4 class="fw-bold mb-1 d-flex align-items-center gap-2">
+        <img src="/static_base_icons?name=webhook&fill=0dcaf0" style="width: 24px; height: 24px;">
+        {{ t('melodi_payment.webhooks_retours_passerelles_callbacks', 'Webhooks & Retours Passerelles (Callbacks)') }}
+      </h4>
+      <p class="text-muted small mb-0">{{ t('melodi_payment.journal_de_diagnostic_des', 'Journal de diagnostic des notifications asynchrones et retours de traitement émis par les fournisseurs') }}</p>
+    </div>
+    <span class="badge bg-light text-dark border">{{ webhooks|length }} notification(s) enregistrée(s)</span>
+  </div>
+
+  <div class="card border-0 shadow-sm rounded-3">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-3">{{ t('melodi_payment.id_tentative', 'ID Tentative') }}</th>
+            <th>{{ t('melodi_payment.paiement', 'Paiement') }}</th>
+            <th>{{ t('melodi_payment.fournisseur', 'Fournisseur') }}</th>
+            <th>{{ t('melodi_payment.moyen', 'Moyen') }}</th>
+            <th>{{ t('melodi_payment.ref_passerelle', 'Réf. Passerelle') }}</th>
+            <th>{{ t('melodi_payment.statut_recu', 'Statut Reçu') }}</th>
+            <th>{{ t('melodi_payment.horodatage', 'Horodatage') }}</th>
+            <th class="text-end pe-3">{{ t('melodi_payment.diagnostic_payload', 'Diagnostic Payload') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if webhooks %}
+            {% for w in webhooks %}
+            <tr>
+              <td class="ps-3 font-monospace small"><code>{{ w.attempt_id }}</code></td>
+              <td>
+                <a href="/admin/melodi_payment/detail?id={{ w.payment_id }}" class="fw-bold text-decoration-none text-primary">
+                  {{ w.payment_ref }}
+                </a>
+              </td>
+              <td><span class="badge bg-light text-dark border">{{ w.provider }}</span></td>
+              <td>{{ w.method }}</td>
+              <td><small class="font-monospace">{{ w.provider_reference }}</small></td>
+              <td>
+                <span class="badge {% if w.status == 'succeeded' %}bg-success{% elif w.status == 'failed' %}bg-danger{% else %}bg-info{% endif %}">
+                  {{ w.status }}
+                </span>
+              </td>
+              <td class="small text-muted">{{ w.received_at[:19] }}</td>
+              <td class="text-end pe-3">
+                <button class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#webhookModal{{ w.id }}">
+                  <img src="/static_base_icons?name=code" style="width: 14px; height: 14px;"> {{ t('melodi_payment.inspecter', 'Inspecter') }}
+                </button>
+
+                <!-- Modal Inspection Webhook Payload -->
+                <div class="modal fade text-start" id="webhookModal{{ w.id }}" tabindex="-1">
+                  <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h6 class="modal-title fw-bold">Diagnostic Callback Passerelle ({{ w.provider }})</h6>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                      </div>
+                      <div class="modal-body">
+                        {% if w.error_message %}
+                        <div class="alert alert-danger small mb-3">
+                          <strong>{{ t('melodi_payment.message_passerelle', 'Message Passerelle :') }}</strong> {{ w.error_message }}
+                        </div>
+                        {% endif %}
+                        <h6 class="fw-bold small mb-2">{{ t('melodi_payment.donnees_brutes_recues_payload', 'Données brutes reçues (Payload JSON) :') }}</h6>
+                        <pre class="bg-light p-3 rounded small font-monospace" style="max-height: 250px; overflow-y: auto;">{{ w.payload_preview | tojson(indent=2) if w.payload_preview else '{}' }}</pre>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="8" class="text-center py-4 text-muted small">{{ t('melodi_payment.aucun_retour_passerelle_ou', 'Aucun retour passerelle ou webhook enregistré.') }}</td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

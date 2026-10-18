@@ -1,0 +1,107 @@
+<div class="container-fluid py-3">
+  <!-- Header -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+    <div>
+      <h4 class="fw-bold mb-1 d-flex align-items-center gap-2">
+        <img src="/static_base_icons?name=undo&fill=dc3545" style="width: 24px; height: 24px;">
+        {{ t('melodi_payment.historique_des_remboursements', 'Historique des Remboursements') }}
+      </h4>
+      <p class="text-muted small mb-0">{{ total }} remboursement(s) enregistré(s) dans le grand livre</p>
+    </div>
+  </div>
+
+  <!-- Search & Filter Card -->
+  <div class="card border-0 shadow-sm rounded-3 mb-4 p-3 bg-light">
+    <form method="GET" action="/admin/melodi_payment/refunds" class="row g-2 align-items-end">
+      <div class="col-12 col-md-6">
+        <label class="form-label small fw-bold mb-1">{{ t('melodi_payment.recherche', 'Recherche') }}</label>
+        <div class="input-group input-group-sm">
+          <span class="input-group-text bg-white"><img src="/static_base_icons?name=search" style="width: 14px; height: 14px; opacity: 0.6;"></span>
+          <input type="text" name="q" value="{{ filter_search }}" class="form-control bg-white" placeholder="{{ t('melodi_payment.recherche_remboursements', 'ID remboursement, référence externe, motif...') }}">
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <label class="form-label small fw-bold mb-1">{{ t('melodi_payment.statut', 'Statut') }}</label>
+        <select name="status" class="form-select form-select-sm bg-white">
+          <option value="">{{ t('melodi_payment.tous_les_statuts', 'Tous les statuts') }}</option>
+          <option value="succeeded" {% if filter_status == 'succeeded' %}selected{% endif %}>{{ t('melodi_payment.succeeded_valide', 'Succeeded (Validé)') }}</option>
+          <option value="pending" {% if filter_status == 'pending' %}selected{% endif %}>{{ t('melodi_payment.pending', 'Pending') }}</option>
+          <option value="failed" {% if filter_status == 'failed' %}selected{% endif %}>{{ t('melodi_payment.failed', 'Failed') }}</option>
+        </select>
+      </div>
+      <div class="col-6 col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><img src="/static_base_icons?name=filter_alt&fill=white" style="width: 14px; height: 14px;" class="me-1">{{ t('melodi_payment.filtrer', 'Filtrer') }}</button>
+        <a href="/admin/melodi_payment/refunds" class="btn btn-outline-secondary btn-sm"><img src="/static_base_icons?name=close" style="width: 14px; height: 14px;"></a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Table Card -->
+  <div class="card border-0 shadow-sm rounded-3">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-3">{{ t('melodi_payment.id_remboursement', 'ID Remboursement') }}</th>
+            <th>{{ t('melodi_payment.paiement_original', 'Paiement Original') }}</th>
+            <th>{{ t('melodi_payment.montant_rembourse', 'Montant Remboursé') }}</th>
+            <th>{{ t('melodi_payment.motif', 'Motif') }}</th>
+            <th>{{ t('melodi_payment.ref_passerelle', 'Réf. Passerelle') }}</th>
+            <th>{{ t('melodi_payment.statut', 'Statut') }}</th>
+            <th>{{ t('melodi_payment.date', 'Date') }}</th>
+            <th class="text-end pe-3">{{ t('melodi_payment.action', 'Action') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if refunds %}
+            {% for r in refunds %}
+            <tr>
+              <td class="ps-3 font-monospace small"><code>{{ r.refund_id }}</code></td>
+              <td>
+                <a href="/admin/melodi_payment/detail?id={{ r.payment_uuid }}" class="fw-bold text-decoration-none text-primary">
+                  {{ r.payment_ref }}
+                </a>
+                <small class="text-muted d-block font-monospace">Paiement initial : {{ r.payment_amount }} {{ r.currency }}</small>
+              </td>
+              <td>
+                <span class="font-monospace fw-bold text-danger fs-6">-{{ "%.2f"|format(r.amount_float) }} {{ r.currency }}</span>
+              </td>
+              <td>{{ r.reason or '—' }}</td>
+              <td><small class="font-monospace text-muted">{{ r.provider_reference or '—' }}</small></td>
+              <td>
+                <span class="badge bg-success">{{ r.status }}</span>
+              </td>
+              <td class="small text-muted">{{ r.created_at[:16] if r.created_at else '' }}</td>
+              <td class="text-end pe-3">
+                <a href="/admin/melodi_payment/detail?id={{ r.payment_uuid }}" class="btn btn-sm btn-outline-secondary">
+                  {{ t('melodi_payment.voir_paiement', 'Voir Paiement') }}
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="8" class="text-center py-4 text-muted small">{{ t('melodi_payment.aucun_remboursement_trouve', 'Aucun remboursement trouvé.') }}</td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination Footer -->
+    <div class="card-footer bg-white border-0 py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <small class="text-muted">Affichage page {{ page }} sur {{ total_pages }} ({{ total }} résultats)</small>
+      <nav>
+        <ul class="pagination pagination-sm mb-0">
+          <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+            <a class="page-link" href="/admin/melodi_payment/refunds?page={{ page - 1 }}&q={{ filter_search }}&status={{ filter_status }}">{{ t('melodi_payment.precedent', 'Précédent') }}</a>
+          </li>
+          <li class="page-item active"><span class="page-link">{{ page }}</span></li>
+          <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+            <a class="page-link" href="/admin/melodi_payment/refunds?page={{ page + 1 }}&q={{ filter_search }}&status={{ filter_status }}">{{ t('melodi_payment.suivant', 'Suivant') }}</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+</div>

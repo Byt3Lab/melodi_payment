@@ -1,0 +1,9 @@
+{
+    "version": "0.1.0",
+    "name": "melodi_payment",
+    "title": "MELODI Payment",
+    "description": "Infrastructure de paiement universelle, découplée et extensible pour MELODI.",
+    "depends": [
+        "base"
+    ]
+}

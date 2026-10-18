@@ -1,0 +1,84 @@
+<div class="container-fluid py-3">
+  <!-- Header -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+      <h4 class="fw-bold mb-1 d-flex align-items-center gap-2">
+        <img src="/static_base_icons?name=payments&fill=198754" style="width: 24px; height: 24px;">
+        {{ t('melodi_payment.moyens_de_paiement_declares', 'Moyens de Paiement Déclarés') }}
+      </h4>
+      <p class="text-muted small mb-0">{{ t('melodi_payment.methodes_de_reglement_declarees', 'Méthodes de règlement déclarées dynamiquement par les modules connectés via le registre et les hooks.') }}</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge bg-primary fs-6">{{ methods|length }} méthode(s) déclarée(s)</span>
+      <a href="/admin/melodi_payment/providers" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-1 rounded-2">
+        <img src="/static_base_icons?name=hub&fill=64748b" style="width: 14px; height: 14px;">
+        <span>{{ t('melodi_payment.gerer_les_fournisseurs', 'Gérer les fournisseurs') }}</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    {% if methods %}
+      {% for m in methods %}
+      <div class="col-12 col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm rounded-3 h-100 p-3 bg-body {% if not m.is_active %}opacity-75 border-secondary-subtle{% endif %}">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <div class="d-flex align-items-center gap-2">
+              <div class="{% if m.is_active %}bg-success-subtle text-success{% else %}bg-secondary-subtle text-muted{% endif %} p-2 rounded-3 d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                <img src="{{ m.resolved_icon }}" style="width: 22px; height: 22px; object-fit: contain;">
+              </div>
+              <div>
+                <h6 class="fw-bold mb-0 text-dark">{{ m.name }}</h6>
+                <small class="text-muted font-monospace"><code>{{ m.method_id }}</code></small>
+              </div>
+            </div>
+            {% if m.is_active %}
+            <span class="badge bg-success-subtle text-success border border-success-subtle">{{ t('melodi_payment.actif_pret', 'Actif & Prêt') }}</span>
+            {% else %}
+            <span class="badge bg-secondary-subtle text-muted border">{{ t('melodi_payment.desactive', 'Désactivé') }}</span>
+            {% endif %}
+          </div>
+
+          <p class="small text-muted mb-3">{{ m.description or 'Aucune description fournie.' }}</p>
+
+          <div class="border-top pt-2 mt-auto small">
+            <div class="d-flex justify-content-between py-1">
+              <span class="text-muted">{{ t('melodi_payment.fournisseur', 'Fournisseur :') }}</span>
+              <span class="fw-bold">
+                <code>{{ m.provider }}</code>
+                {% if not m.is_active %}
+                <a href="/admin/melodi_payment/providers" class="ms-1 text-decoration-none small text-primary" title="{{ t('melodi_payment.activer_ce_fournisseur', 'Activer ce fournisseur') }}">{{ t('melodi_payment.activer', '(Activer)') }}</a>
+                {% endif %}
+              </span>
+            </div>
+            <div class="d-flex justify-content-between py-1">
+              <span class="text-muted">{{ t('melodi_payment.devises_supportees', 'Devises supportées :') }}</span>
+              <span>
+                {% for curr in m.supported_currencies or [] %}
+                <span class="badge bg-light text-dark border">{{ curr }}</span>
+                {% endfor %}
+              </span>
+            </div>
+            <div class="d-flex justify-content-between py-1">
+              <span class="text-muted">{{ t('melodi_payment.capacites', 'Capacités :') }}</span>
+              <span>
+                {% for cap in m.capabilities or [] %}
+                <span class="badge bg-secondary-subtle text-secondary">{{ cap }}</span>
+                {% endfor %}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-3 p-4 text-center">
+          <div><img src="/static_base_icons?name=payments&fill=6c757d" style="width: 48px; height: 48px;" class="mb-3 opacity-50"></div>
+          <h5 class="fw-bold">{{ t('melodi_payment.aucun_moyen_de_paiement', 'Aucun moyen de paiement enregistré') }}</h5>
+          <p class="text-muted small">{{ t('melodi_payment.aucun_module_provider_de', 'Aucun module provider de paiement n\'a encore enregistré de méthode via le registre ou les hooks. Activez le module') }} <code>{{ t('melodi_payment.melodi_example_payment', 'melodi_example_payment') }}</code> {{ t('melodi_payment.ou_un_autre_connecteur', 'ou un autre connecteur compatible.') }}</p>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>

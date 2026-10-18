@@ -1,0 +1,66 @@
+<div class="container-fluid py-3">
+  <!-- Header -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+      <h4 class="fw-bold mb-1 d-flex align-items-center gap-2">
+        <img src="/static_base_icons?name=description&fill=6c757d" style="width: 24px; height: 24px;">
+        {{ t('melodi_payment.journaux_techniques_audit_des', 'Journaux Techniques & Audit des Paiements') }}
+      </h4>
+      <p class="text-muted small mb-0">{{ t('melodi_payment.tracabilite_chronologique_des_evenements', 'Traçabilité chronologique des événements financiers avec masquage automatique des données sensibles') }}</p>
+    </div>
+    <span class="badge bg-light text-dark border">{{ logs|length }} enregistrement(s)</span>
+  </div>
+
+  <div class="card border-0 shadow-sm rounded-3">
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-3">{{ t('melodi_payment.horodatage', 'Horodatage') }}</th>
+            <th>{{ t('melodi_payment.niveau', 'Niveau') }}</th>
+            <th>{{ t('melodi_payment.evenement', 'Événement') }}</th>
+            <th>{{ t('melodi_payment.paiement', 'Paiement') }}</th>
+            <th>{{ t('melodi_payment.fournisseur_moyen', 'Fournisseur / Moyen') }}</th>
+            <th class="pe-3">{{ t('melodi_payment.message_resume', 'Message / Résumé') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if logs %}
+            {% for l in logs %}
+            <tr>
+              <td class="ps-3 small text-muted font-monospace">{{ l.timestamp[:19] }}</td>
+              <td>
+                <span class="badge 
+                  {% if l.level == 'SUCCESS' %}bg-success-subtle text-success
+                  {% elif l.level == 'ERROR' %}bg-danger-subtle text-danger
+                  {% else %}bg-info-subtle text-info{% endif %}">
+                  {{ l.level }}
+                </span>
+              </td>
+              <td><code>{{ l.event }}</code></td>
+              <td>
+                {% if l.payment_id %}
+                <a href="/admin/melodi_payment/detail?id={{ l.payment_id }}" class="fw-bold text-decoration-none">
+                  {{ l.payment_ref }}
+                </a>
+                {% else %}
+                <span class="text-muted">{{ l.payment_ref }}</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="badge bg-light text-dark border">{{ l.provider }}</span>
+                <small class="text-muted">{{ l.method }}</small>
+              </td>
+              <td class="pe-3 small text-break">{{ l.message }}</td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="6" class="text-center py-4 text-muted small">{{ t('melodi_payment.aucun_evenement_d_audit', 'Aucun événement d\'audit enregistré.') }}</td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

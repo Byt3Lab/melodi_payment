@@ -1,0 +1,332 @@
+<div class="container-fluid py-3">
+  <!-- Flash Notification -->
+  {% if flash_message %}
+  <div class="alert alert-{{ flash_type }} alert-dismissible fade show shadow-sm mb-4 d-flex align-items-center gap-2" role="alert">
+    <img src="/static_base_icons?name=info&fill=0d6efd" style="width: 16px; height: 16px;">
+    <span>{{ flash_message }}</span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endif %}
+
+  <!-- Header -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+      <div class="d-flex align-items-center gap-2 mb-1">
+        <a href="/admin/melodi_payment/payments" class="btn btn-sm btn-outline-secondary d-flex align-items-center">
+          <img src="/static_base_icons?name=arrow_back" style="width: 14px; height: 14px;">
+        </a>
+        <h4 class="fw-bold mb-0">Paiement : {{ payment.reference }}</h4>
+        <span class="badge 
+          {% if payment.status == 'succeeded' %}bg-success
+          {% elif payment.status == 'pending' %}bg-warning text-dark
+          {% elif payment.status == 'processing' %}bg-info
+          {% elif payment.status == 'refunded' %}bg-dark
+          {% elif payment.status == 'partially_refunded' %}bg-primary
+          {% elif payment.status == 'failed' %}bg-danger
+          {% else %}bg-secondary{% endif %} fs-6">
+          {{ payment.status }}
+        </span>
+      </div>
+      <p class="text-muted small mb-0">{{ t('melodi_payment.uuid', 'UUID :') }} <code>{{ payment.payment_id }}</code> | Enregistré le {{ payment.created_at[:19] if payment.created_at else '' }}</p>
+    </div>
+    <div class="d-flex gap-2">
+      <!-- Actions Contextuelles sécurisées -->
+      {% if payment.status in ('pending', 'failed') %}
+      <button class="btn btn-primary btn-sm shadow-sm d-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#processModal">
+        <img src="/static_base_icons?name=play_arrow&fill=white" style="width: 14px; height: 14px;">
+        <span>{% if payment.status == 'failed' %}Relancer le Paiement{% else %}Exécuter le Paiement{% endif %}</span>
+      </button>
+      {% endif %}
+
+      {% if payment.status == 'pending' %}
+      <button class="btn btn-outline-danger btn-sm shadow-sm d-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#cancelModal">
+        <img src="/static_base_icons?name=close&fill=dc3545" style="width: 14px; height: 14px;">
+        <span>{{ t('melodi_payment.annuler_la_demande', 'Annuler la demande') }}</span>
+      </button>
+      {% endif %}
+
+      {% if payment.status == 'processing' %}
+      <form method="POST" action="/admin/melodi_payment/detail?id={{ payment.payment_id }}" class="d-inline">
+        <input type="hidden" name="action_type" value="verify">
+        <button type="submit" class="btn btn-info btn-sm text-white shadow-sm d-flex align-items-center gap-1">
+          <img src="/static_base_icons?name=sync_alt&fill=white" style="width: 14px; height: 14px;">
+          <span>{{ t('melodi_payment.verifier_le_statut_externe', 'Vérifier le Statut Externe') }}</span>
+        </button>
+      </form>
+      {% endif %}
+
+      {% if payment.status in ('succeeded', 'partially_refunded') and max_refundable > 0 %}
+      <button class="btn btn-outline-dark btn-sm shadow-sm d-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#refundModal">
+        <img src="/static_base_icons?name=undo" style="width: 14px; height: 14px;">
+        <span>Rembourser (Reste : {{ "%.2f"|format(max_refundable) }} {{ payment.currency }})</span>
+      </button>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Colonne Gauche : Synthèse & Source -->
+    <div class="col-lg-5">
+      <!-- Synthèse Financière -->
+      <div class="card border-0 shadow-sm rounded-3 mb-4 p-3 bg-body">
+        <h6 class="fw-bold mb-3 border-bottom pb-2 text-dark d-flex align-items-center gap-2">
+          <img src="/static_base_icons?name=info&fill=0d6efd" style="width: 16px; height: 16px;">
+          {{ t('melodi_payment.synthese_financiere', 'Synthèse Financière') }}
+        </h6>
+        <div class="row g-2 small">
+          <div class="col-5 text-muted">{{ t('melodi_payment.montant_total', 'Montant Total :') }}</div>
+          <div class="col-7 fw-bold font-monospace fs-5 text-dark">{{ "%.2f"|format(payment.amount_float) }} {{ payment.currency }}</div>
+
+          <div class="col-5 text-muted">{{ t('melodi_payment.deja_rembourse', 'Déjà Remboursé :') }}</div>
+          <div class="col-7 font-monospace text-danger fw-bold">{{ "%.2f"|format(total_refunded) }} {{ payment.currency }}</div>
+
+          <div class="col-5 text-muted">{{ t('melodi_payment.reste_remboursable', 'Reste Remboursable :') }}</div>
+          <div class="col-7 font-monospace text-success fw-bold">{{ "%.2f"|format(max_refundable) }} {{ payment.currency }}</div>
+
+          <div class="col-5 text-muted">{{ t('melodi_payment.moyen_retenu', 'Moyen Retenu :') }}</div>
+          <div class="col-7">{{ payment.method or 'Non défini' }}</div>
+
+          <div class="col-5 text-muted">{{ t('melodi_payment.fournisseur', 'Fournisseur :') }}</div>
+          <div class="col-7"><code>{{ payment.provider or 'Non assigné' }}</code></div>
+
+          <div class="col-5 text-muted">{{ t('melodi_payment.date_limite', 'Date Limite :') }}</div>
+          <div class="col-7">{{ payment.expires_at[:19] if payment.expires_at else 'Aucune expiration' }}</div>
+
+          <div class="col-5 text-muted">{{ t('melodi_payment.cle_d_idempotence', 'Clé d\'Idempotence :') }}</div>
+          <div class="col-7"><code>{{ payment.idempotency_key or 'Aucune' }}</code></div>
+
+          <div class="col-5 text-muted">{{ t('melodi_payment.description', 'Description :') }}</div>
+          <div class="col-7">{{ payment.description or '—' }}</div>
+        </div>
+      </div>
+
+      <!-- Source Métier -->
+      <div class="card border-0 shadow-sm rounded-3 mb-4 p-3 bg-body">
+        <h6 class="fw-bold mb-3 border-bottom pb-2 text-dark d-flex align-items-center gap-2">
+          <img src="/static_base_icons?name=link&fill=0dcaf0" style="width: 16px; height: 16px;">
+          {{ t('melodi_payment.origine_metier_decouplee', 'Origine Métier (Découplée)') }}
+        </h6>
+        <div class="row g-2 small">
+          <div class="col-5 text-muted">{{ t('melodi_payment.type_de_source', 'Type de Source :') }}</div>
+          <div class="col-7"><span class="badge bg-light text-dark border">{{ payment.source_type or 'Manuel / Sans module' }}</span></div>
+
+          <div class="col-5 text-muted">{{ t('melodi_payment.id_enregistrement', 'ID Enregistrement :') }}</div>
+          <div class="col-7 font-monospace fw-bold">{{ payment.source_id or '—' }}</div>
+        </div>
+      </div>
+
+      <!-- Coordonnées Payeur -->
+      <div class="card border-0 shadow-sm rounded-3 p-3 bg-body">
+        <h6 class="fw-bold mb-3 border-bottom pb-2 text-dark d-flex align-items-center gap-2">
+          <img src="/static_base_icons?name=person&fill=6c757d" style="width: 16px; height: 16px;">
+          {{ t('melodi_payment.coordonnees_du_payeur', 'Coordonnées du Payeur') }}
+        </h6>
+        {% if payment.payer %}
+        <div class="small">
+          <div class="mb-1"><strong>{{ t('melodi_payment.nom', 'Nom :') }}</strong> {{ payment.payer.get('name', '—') }}</div>
+          <div class="mb-1"><strong>{{ t('melodi_payment.email', 'Email :') }}</strong> {{ payment.payer.get('email', '—') }}</div>
+          <div class="mb-1"><strong>{{ t('melodi_payment.telephone', 'Téléphone :') }}</strong> {{ payment.payer.get('phone', '—') }}</div>
+        </div>
+        {% else %}
+        <p class="text-muted small mb-0">{{ t('melodi_payment.aucune_information_client_transmise', 'Aucune information client transmise.') }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Colonne Droite : Tentatives & Remboursements -->
+    <div class="col-lg-7">
+      <!-- Tentatives de Paiement (Attempts) -->
+      <div class="card border-0 shadow-sm rounded-3 mb-4">
+        <div class="card-header bg-white border-0 pt-3 pb-2 px-3 d-flex justify-content-between align-items-center">
+          <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+            <img src="/static_base_icons?name=history&fill=0d6efd" style="width: 18px; height: 18px;">
+            Tentatives Effectuées ({{ payment.attempts|length }})
+          </h6>
+          <span class="badge bg-light text-muted border">{{ t('melodi_payment.historique_complet', 'Historique complet') }}</span>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3">{{ t('melodi_payment.id_tentative', 'ID Tentative') }}</th>
+                <th>{{ t('melodi_payment.moyen', 'Moyen') }}</th>
+                <th>{{ t('melodi_payment.provider', 'Provider') }}</th>
+                <th>{{ t('melodi_payment.ref_externe', 'Réf. Externe') }}</th>
+                <th>{{ t('melodi_payment.statut', 'Statut') }}</th>
+                <th>{{ t('melodi_payment.date', 'Date') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if payment.attempts %}
+                {% for a in payment.attempts %}
+                <tr>
+                  <td class="ps-3 font-monospace small"><code>{{ a.attempt_id }}</code></td>
+                  <td>{{ a.method }}</td>
+                  <td><span class="badge bg-light text-dark border">{{ a.provider }}</span></td>
+                  <td><small class="font-monospace">{{ a.provider_reference or '—' }}</small></td>
+                  <td>
+                    <span class="badge 
+                      {% if a.status == 'succeeded' %}bg-success
+                      {% elif a.status == 'failed' %}bg-danger
+                      {% elif a.status == 'processing' %}bg-info
+                      {% else %}bg-secondary{% endif %}">
+                      {{ a.status }}
+                    </span>
+                  </td>
+                  <td class="small text-muted">{{ a.created_at[:19] if a.created_at else '' }}</td>
+                </tr>
+                {% if a.error_message %}
+                <tr class="table-danger-subtle">
+                  <td colspan="6" class="ps-3 small text-danger">
+                    <img src="/static_base_icons?name=warning&fill=dc3545" style="width: 14px; height: 14px;" class="me-1">
+                    Erreur [{{ a.error_code or 'ERROR' }}] : {{ a.error_message }}
+                  </td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="6" class="text-center py-3 text-muted small">{{ t('melodi_payment.aucune_tentative_de_paiement', 'Aucune tentative de paiement initiée.') }}</td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Remboursements (Refunds) -->
+      <div class="card border-0 shadow-sm rounded-3">
+        <div class="card-header bg-white border-0 pt-3 pb-2 px-3 d-flex justify-content-between align-items-center">
+          <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+            <img src="/static_base_icons?name=undo&fill=dc3545" style="width: 18px; height: 18px;">
+            Remboursements Enregistrés ({{ payment.refunds|length }})
+          </h6>
+          <span class="badge bg-light text-muted border">Cumul : {{ "%.2f"|format(total_refunded) }} {{ payment.currency }}</span>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3">{{ t('melodi_payment.id_remboursement', 'ID Remboursement') }}</th>
+                <th>{{ t('melodi_payment.montant', 'Montant') }}</th>
+                <th>{{ t('melodi_payment.motif', 'Motif') }}</th>
+                <th>{{ t('melodi_payment.ref_externe', 'Réf. Externe') }}</th>
+                <th>{{ t('melodi_payment.statut', 'Statut') }}</th>
+                <th>{{ t('melodi_payment.date', 'Date') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if payment.refunds %}
+                {% for r in payment.refunds %}
+                <tr>
+                  <td class="ps-3 font-monospace small"><code>{{ r.refund_id }}</code></td>
+                  <td class="font-monospace fw-bold text-danger">-{{ "%.2f"|format(r.amount_float) }} {{ r.currency }}</td>
+                  <td class="small">{{ r.reason or '—' }}</td>
+                  <td><small class="font-monospace">{{ r.provider_reference or '—' }}</small></td>
+                  <td><span class="badge bg-success">{{ r.status }}</span></td>
+                  <td class="small text-muted">{{ r.created_at[:19] if r.created_at else '' }}</td>
+                </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="6" class="text-center py-3 text-muted small">{{ t('melodi_payment.aucun_remboursement_effectue_sur', 'Aucun remboursement effectué sur ce paiement.') }}</td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Traitement / Exécution Paiement -->
+<div class="modal fade" id="processModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="/admin/melodi_payment/detail?id={{ payment.payment_id }}">
+        <input type="hidden" name="action_type" value="process">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold">{{ t('melodi_payment.declencher_la_tentative_de', 'Déclencher la Tentative de Paiement') }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small text-muted">{{ t('melodi_payment.selectionnez_le_moyen_de', 'Sélectionnez le moyen de paiement à utiliser parmi les méthodes compatibles fournies par les modules connectés.') }}</p>
+          <div class="mb-3">
+            <label class="form-label small fw-bold">{{ t('melodi_payment.moyen_de_paiement', 'Moyen de paiement') }}</label>
+            <select name="method" class="form-select" required>
+              {% for m in methods %}
+              <option value="{{ m.method_id }}">{{ m.name }} ({{ m.provider }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="alert alert-light border small mb-0">
+            {{ t('melodi_payment.montant', 'Montant :') }} <strong>{{ "%.2f"|format(payment.amount_float) }} {{ payment.currency }}</strong>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">{{ t('melodi_payment.annuler', 'Annuler') }}</button>
+          <button type="submit" class="btn btn-primary">{{ t('melodi_payment.lancer_la_transaction', 'Lancer la Transaction') }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Annulation -->
+<div class="modal fade" id="cancelModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="/admin/melodi_payment/detail?id={{ payment.payment_id }}">
+        <input type="hidden" name="action_type" value="cancel">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold text-danger">{{ t('melodi_payment.confirmer_l_annulation', 'Confirmer l\'Annulation') }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p class="small text-muted">{{ t('melodi_payment.cette_action_annulera_definitivement', 'Cette action annulera définitivement la demande de paiement. Le client ou module demandeur sera notifié de l\'annulation.') }}</p>
+          <div class="mb-3">
+            <label class="form-label small fw-bold">{{ t('melodi_payment.motif_de_l_annulation', 'Motif de l\'annulation') }}</label>
+            <textarea name="reason" class="form-control" rows="3" placeholder="{{ t('melodi_payment.ex_motif_annulation', 'Ex: Demande client, doublon...') }}" required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">{{ t('melodi_payment.fermer', 'Fermer') }}</button>
+          <button type="submit" class="btn btn-danger">{{ t('melodi_payment.confirmer_l_annulation', 'Confirmer l\'Annulation') }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Remboursement -->
+<div class="modal fade" id="refundModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="/admin/melodi_payment/detail?id={{ payment.payment_id }}">
+        <input type="hidden" name="action_type" value="refund">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold text-dark">{{ t('melodi_payment.remboursement_de_paiement', 'Remboursement de Paiement') }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-info small mb-3">
+            {{ t('melodi_payment.plafond_disponible_au_remboursement', 'Plafond disponible au remboursement :') }} <strong>{{ "%.2f"|format(max_refundable) }} {{ payment.currency }}</strong>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-bold">Montant à rembourser (Max : {{ "%.2f"|format(max_refundable) }})</label>
+            <input type="number" step="0.01" min="0.01" max="{{ max_refundable }}" name="amount" class="form-control font-monospace fw-bold" value="{{ max_refundable }}" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-bold">{{ t('melodi_payment.motif_officiel_du_remboursement', 'Motif officiel du remboursement') }}</label>
+            <textarea name="reason" class="form-control" rows="3" placeholder="{{ t('melodi_payment.ex_motif_remboursement', 'Ex: Retour marchandise, geste commercial...') }}" required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">{{ t('melodi_payment.annuler', 'Annuler') }}</button>
+          <button type="submit" class="btn btn-dark">{{ t('melodi_payment.valider_le_remboursement', 'Valider le Remboursement') }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

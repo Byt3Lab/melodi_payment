@@ -1,0 +1,134 @@
+<div class="container-fluid py-3">
+  <!-- Flash Message -->
+  {% if flash_message %}
+  <div class="alert alert-info alert-dismissible fade show shadow-sm mb-4 d-flex align-items-center gap-2" role="alert">
+    <img src="/static_base_icons?name=info&fill=0d6efd" style="width: 16px; height: 16px;">
+    <span>{{ flash_message }}</span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endif %}
+
+  <!-- Header -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+      <h4 class="fw-bold mb-1 d-flex align-items-center gap-2">
+        <img src="/static_base_icons?name=sync_alt&fill=0d6efd" style="width: 24px; height: 24px;">
+        {{ t('melodi_payment.rapprochement_synchronisation_externe', 'Rapprochement & Synchronisation Externe') }}
+      </h4>
+      <p class="text-muted small mb-0">{{ t('melodi_payment.controle_de_coherence_entre', 'Contrôle de cohérence entre l\'état interne MELODI et les soldes des fournisseurs de paiement') }}</p>
+    </div>
+    {% if processing_payments %}
+    <form method="POST" action="/admin/melodi_payment/reconciliation">
+      <input type="hidden" name="action_type" value="sync_all_processing">
+      <button type="submit" class="btn btn-primary btn-sm shadow-sm d-flex align-items-center gap-2">
+        <img src="/static_base_icons?name=sync_alt&fill=white" style="width: 14px; height: 14px;">
+        <span>Synchroniser tous les paiements en cours ({{ processing_payments|length }})</span>
+      </button>
+    </form>
+    {% endif %}
+  </div>
+
+  <!-- Paiements en cours (Processing) nécessitant synchronisation -->
+  <div class="card border-0 shadow-sm rounded-3 mb-4">
+    <div class="card-header bg-white border-0 pt-3 pb-2 px-3 d-flex justify-content-between align-items-center">
+      <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+        <img src="/static_base_icons?name=schedule&fill=ffc107" style="width: 18px; height: 18px;">
+        Paiements en attente de confirmation fournisseur ({{ processing_payments|length }})
+      </h6>
+      <span class="badge bg-warning-subtle text-warning">{{ t('melodi_payment.statut_processing', 'Statut : Processing') }}</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-3">{{ t('melodi_payment.reference', 'Référence') }}</th>
+            <th>{{ t('melodi_payment.montant', 'Montant') }}</th>
+            <th>{{ t('melodi_payment.fournisseur', 'Fournisseur') }}</th>
+            <th>{{ t('melodi_payment.moyen', 'Moyen') }}</th>
+            <th>{{ t('melodi_payment.date_d_initiation', 'Date d\'initiation') }}</th>
+            <th class="text-end pe-3">{{ t('melodi_payment.action_rapprochement', 'Action Rapprochement') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if processing_payments %}
+            {% for p in processing_payments %}
+            <tr>
+              <td class="ps-3">
+                <a href="/admin/melodi_payment/detail?id={{ p.payment_id }}" class="fw-bold text-decoration-none text-primary">
+                  {{ p.reference }}
+                </a>
+              </td>
+              <td class="font-monospace fw-bold">{{ "%.2f"|format(p.amount_float) }} {{ p.currency }}</td>
+              <td><span class="badge bg-light text-dark border">{{ p.provider or 'N/A' }}</span></td>
+              <td>{{ p.method or 'N/A' }}</td>
+              <td class="small text-muted">{{ p.created_at[:16] }}</td>
+              <td class="text-end pe-3">
+                <form method="POST" action="/admin/melodi_payment/reconciliation" class="d-inline">
+                  <input type="hidden" name="action_type" value="sync_single">
+                  <input type="hidden" name="payment_id" value="{{ p.payment_id }}">
+                  <button type="submit" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1">
+                    <img src="/static_base_icons?name=sync_alt" style="width: 14px; height: 14px;"> {{ t('melodi_payment.interroger_passerelle', 'Interroger Passerelle') }}
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="6" class="text-center py-4 text-muted small">
+                <img src="/static_base_icons?name=check_circle&fill=198754" style="width: 16px; height: 16px;" class="me-1">
+                {{ t('melodi_payment.aucun_paiement_bloque_en', 'Aucun paiement bloqué en cours de traitement. Toutes les transactions sont réconciliées.') }}
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Paiements en attente initiale (Pending) -->
+  <div class="card border-0 shadow-sm rounded-3">
+    <div class="card-header bg-white border-0 pt-3 pb-2 px-3">
+      <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+        <img src="/static_base_icons?name=hourglass_empty&fill=6c757d" style="width: 18px; height: 18px;">
+        Paiements en attente initiale d'action client ({{ pending_payments|length }})
+      </h6>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-3">{{ t('melodi_payment.reference', 'Référence') }}</th>
+            <th>{{ t('melodi_payment.montant', 'Montant') }}</th>
+            <th>{{ t('melodi_payment.origine', 'Origine') }}</th>
+            <th>{{ t('melodi_payment.date_d_expiration', 'Date d\'expiration') }}</th>
+            <th class="text-end pe-3">{{ t('melodi_payment.lien', 'Lien') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if pending_payments %}
+            {% for p in pending_payments %}
+            <tr>
+              <td class="ps-3">
+                <a href="/admin/melodi_payment/detail?id={{ p.payment_id }}" class="fw-bold text-decoration-none">
+                  {{ p.reference }}
+                </a>
+              </td>
+              <td class="font-monospace">{{ "%.2f"|format(p.amount_float) }} {{ p.currency }}</td>
+              <td><span class="badge bg-light text-dark border">{{ p.source_type or 'Manuel' }}</span></td>
+              <td class="small text-muted">{{ p.expires_at[:16] if p.expires_at else 'Pas de limite' }}</td>
+              <td class="text-end pe-3">
+                <a href="/admin/melodi_payment/detail?id={{ p.payment_id }}" class="btn btn-sm btn-outline-secondary">{{ t('melodi_payment.inspecter', 'Inspecter') }}</a>
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="5" class="text-center py-3 text-muted small">{{ t('melodi_payment.aucun_paiement_en_attente', 'Aucun paiement en attente.') }}</td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

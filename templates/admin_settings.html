@@ -1,0 +1,89 @@
+<div class="container-fluid py-3">
+  <!-- Header -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+      <h4 class="fw-bold mb-1 d-flex align-items-center gap-2">
+        <img src="/static_base_icons?name=settings&fill=6c757d" style="width: 24px; height: 24px;">
+        {{ t('melodi_payment.parametres_du_module_de', 'Paramètres du Module de Paiement') }}
+      </h4>
+      <p class="text-muted small mb-0">{{ t('melodi_payment.configuration_technique_et_etat', 'Configuration technique et état du schéma de données pour') }} <code>{{ module_name }}</code></p>
+    </div>
+    <a href="/admin/melodi_payment/providers" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1.5 rounded-2">
+      <img src="/static_base_icons?name=hub&fill=0d6efd" style="width: 16px; height: 16px;">
+      <span>{{ t('melodi_payment.gerer_les_passerelles', 'Gérer les passerelles') }}</span>
+    </a>
+  </div>
+
+  <div class="row g-4">
+    <!-- Constantes et Valeurs par Défaut -->
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm rounded-3 p-3 bg-body h-100">
+        <h6 class="fw-bold mb-3 border-bottom pb-2 text-dark d-flex align-items-center gap-2">
+          <img src="/static_base_icons?name=tune&fill=0d6efd" style="width: 18px; height: 18px;">
+          {{ t('melodi_payment.configuration_systeme_services_actifs', 'Configuration Système & Services Actifs') }}
+        </h6>
+        <div class="row g-3 small">
+          <div class="col-6 text-muted">{{ t('melodi_payment.devise_par_defaut', 'Devise par Défaut :') }}</div>
+          <div class="col-6 fw-bold font-monospace">{{ default_currency }}</div>
+
+          <div class="col-6 text-muted">{{ t('melodi_payment.fournisseur_par_defaut', 'Fournisseur par Défaut :') }}</div>
+          <div class="col-6 fw-bold font-monospace">
+            {% if default_service %}
+            <span class="badge bg-success-subtle text-success border border-success-subtle">{{ default_service }}</span>
+            {% else %}
+            <span class="text-muted">{{ t('melodi_payment.aucun', 'Aucun') }}</span>
+            {% endif %}
+          </div>
+
+          <div class="col-6 text-muted">{{ t('melodi_payment.services_actifs', 'Services Actifs :') }}</div>
+          <div class="col-6">
+            {% if active_services %}
+              {% for s in active_services %}
+              <span class="badge bg-primary-subtle text-primary border border-primary-subtle me-1">{{ s }}</span>
+              {% endfor %}
+            {% else %}
+              <span class="badge bg-danger-subtle text-danger">{{ t('melodi_payment.aucun_service_actif', 'Aucun service actif') }}</span>
+            {% endif %}
+          </div>
+
+          <div class="col-6 text-muted">{{ t('melodi_payment.delai_d_expiration_standard', 'Délai d\'expiration standard :') }}</div>
+          <div class="col-6 fw-bold font-monospace">{{ default_expiration_minutes }} minutes</div>
+
+          <div class="col-6 text-muted">{{ t('melodi_payment.controle_d_idempotence', 'Contrôle d\'Idempotence :') }}</div>
+          <div class="col-6"><span class="badge bg-success">{{ t('melodi_payment.actif_cle_unique_indexee', 'Actif (Clé unique indexée)') }}</span></div>
+
+          <div class="col-6 text-muted">{{ t('melodi_payment.precision_monetaire_sql', 'Précision monétaire SQL :') }}</div>
+          <div class="col-6"><span class="badge bg-light text-dark border font-monospace">{{ t('melodi_payment.numeric_18_4_decimal', 'Numeric(18, 4) - Decimal') }}</span></div>
+
+          <div class="col-6 text-muted">{{ t('melodi_payment.verrouillage_concurrence', 'Verrouillage Concurrence :') }}</div>
+          <div class="col-6"><span class="badge bg-light text-dark border">{{ t('melodi_payment.pessimiste_select_for_update', 'Pessimiste (SELECT ... FOR UPDATE)') }}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Schéma des Tables Déclarées -->
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm rounded-3 p-3 bg-body h-100">
+        <h6 class="fw-bold mb-3 border-bottom pb-2 text-dark d-flex align-items-center gap-2">
+          <img src="/static_base_icons?name=dns&fill=0dcaf0" style="width: 18px; height: 18px;">
+          {{ t('melodi_payment.tables_sql_prefixees', 'Tables SQL Préfixées') }}
+        </h6>
+        <p class="text-muted small mb-3">{{ t('melodi_payment.conformement_aux_regles_melodi', 'Conformément aux règles MELODI, chaque module est propriétaire de ses tables avec préfixe dynamique :') }}</p>
+        <ul class="list-group list-group-flush small">
+          <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+            <span>{{ t('melodi_payment.demandes_de_paiement', 'Demandes de Paiement :') }}</span>
+            <code>{{ table_payments }}</code>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+            <span>{{ t('melodi_payment.tentatives_d_execution', 'Tentatives d\'Exécution :') }}</span>
+            <code>{{ table_attempts }}</code>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+            <span>{{ t('melodi_payment.grand_livre_des_remboursements', 'Grand Livre des Remboursements :') }}</span>
+            <code>{{ table_refunds }}</code>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>

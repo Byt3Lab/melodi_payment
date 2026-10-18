@@ -1,0 +1,230 @@
+<div class="container-fluid py-3">
+  <!-- Header -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+    <div>
+      <h4 class="fw-bold mb-1 d-flex align-items-center gap-2">
+        <img src="/static_base_icons?name=receipt_long&fill=0d6efd" style="width: 24px; height: 24px;">
+        {{ t('melodi_payment.gestion_des_paiements', 'Gestion des Paiements') }}
+      </h4>
+      <p class="text-muted small mb-0">{{ total }} {{ t('melodi_payment.transactions_au_total', 'transaction(s) au total dans le système') }}</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-dark btn-sm shadow-sm d-flex align-items-center gap-2 px-3" data-bs-toggle="modal" data-bs-target="#createPaymentModal">
+        <img src="/static_base_icons?name=add&fill=white" style="width: 16px; height: 16px;">
+        <span>{{ t('melodi_payment.nouveau_paiement', 'Nouveau Paiement') }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Search & Filter Card -->
+  <div class="card border-0 shadow-sm rounded-3 mb-4 p-3 bg-light">
+    <form method="GET" action="/admin/melodi_payment/payments" class="row g-2 align-items-end">
+      <!-- Search Input -->
+      <div class="col-12 col-md-3">
+        <label class="form-label small fw-bold mb-1">{{ t('melodi_payment.recherche', 'Recherche') }}</label>
+        <div class="input-group input-group-sm">
+          <span class="input-group-text bg-white"><img src="/static_base_icons?name=search" style="width: 14px; height: 14px; opacity: 0.6;"></span>
+          <input type="text" name="q" value="{{ filter_search }}" class="form-control bg-white" placeholder="{{ t('melodi_payment.recherche_ref_id_client', 'Réf, ID, client...') }}">
+        </div>
+      </div>
+
+      <!-- Statut Filter -->
+      <div class="col-6 col-md-2">
+        <label class="form-label small fw-bold mb-1">{{ t('melodi_payment.statut', 'Statut') }}</label>
+        <select name="status" class="form-select form-select-sm bg-white">
+          <option value="">{{ t('melodi_payment.tous_les_statuts', 'Tous les statuts') }}</option>
+          <option value="pending" {% if filter_status == 'pending' %}selected{% endif %}>{{ t('melodi_payment.en_attente', 'En attente') }}</option>
+          <option value="processing" {% if filter_status == 'processing' %}selected{% endif %}>{{ t('melodi_payment.en_cours', 'En cours') }}</option>
+          <option value="succeeded" {% if filter_status == 'succeeded' %}selected{% endif %}>{{ t('melodi_payment.reussi', 'Réussi') }}</option>
+          <option value="failed" {% if filter_status == 'failed' %}selected{% endif %}>{{ t('melodi_payment.echoue', 'Échoué') }}</option>
+          <option value="cancelled" {% if filter_status == 'cancelled' %}selected{% endif %}>{{ t('melodi_payment.annule', 'Annulé') }}</option>
+          <option value="refunded" {% if filter_status == 'refunded' %}selected{% endif %}>{{ t('melodi_payment.rembourse', 'Remboursé') }}</option>
+          <option value="partially_refunded" {% if filter_status == 'partially_refunded' %}selected{% endif %}>{{ t('melodi_payment.remb_partiel', 'Remb. Partiel') }}</option>
+        </select>
+      </div>
+
+      <!-- Provider Filter -->
+      <div class="col-6 col-md-2">
+        <label class="form-label small fw-bold mb-1">{{ t('melodi_payment.fournisseur', 'Fournisseur') }}</label>
+        <select name="provider" class="form-select form-select-sm bg-white">
+          <option value="">{{ t('melodi_payment.tous_les_providers', 'Tous les providers') }}</option>
+          {% for p in providers %}
+          <option value="{{ p.provider_id }}" {% if filter_provider == p.provider_id %}selected{% endif %}>{{ p.name or p.provider_id }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Méthode Filter -->
+      <div class="col-6 col-md-2">
+        <label class="form-label small fw-bold mb-1">{{ t('melodi_payment.methode', 'Méthode') }}</label>
+        <select name="method" class="form-select form-select-sm bg-white">
+          <option value="">{{ t('melodi_payment.toutes_methodes', 'Toutes méthodes') }}</option>
+          {% for m in methods %}
+          <option value="{{ m.method_id }}" {% if filter_method == m.method_id %}selected{% endif %}>{{ m.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Devise -->
+      <div class="col-6 col-md-1">
+        <label class="form-label small fw-bold mb-1">{{ t('melodi_payment.devise', 'Devise') }}</label>
+        <input type="text" name="currency" value="{{ filter_currency }}" class="form-control form-control-sm bg-white" placeholder="XAF">
+      </div>
+
+      <!-- Actions Buttons -->
+      <div class="col-12 col-md-2 d-flex gap-2">
+        <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><img src="/static_base_icons?name=filter_alt&fill=white" style="width: 14px; height: 14px;" class="me-1">{{ t('melodi_payment.filtrer', 'Filtrer') }}</button>
+        <a href="/admin/melodi_payment/payments" class="btn btn-outline-secondary btn-sm" title="{{ t('melodi_payment.reinitialiser', 'Réinitialiser') }}"><img src="/static_base_icons?name=close" style="width: 14px; height: 14px;"></a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Table Card -->
+  <div class="card border-0 shadow-sm rounded-3">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-3">
+              <a href="/admin/melodi_payment/payments?sort=reference&dir={% if sort_dir == 'asc' %}desc{% else %}asc{% endif %}" class="text-dark text-decoration-none d-inline-flex align-items-center gap-1">
+                {{ t('melodi_payment.reference', 'Référence') }} <img src="/static_base_icons?name=sort" style="width: 14px; height: 14px; opacity: 0.5;">
+              </a>
+            </th>
+            <th>{{ t('melodi_payment.source_metier', 'Source Métier') }}</th>
+            <th>
+              <a href="/admin/melodi_payment/payments?sort=amount&dir={% if sort_dir == 'asc' %}desc{% else %}asc{% endif %}" class="text-dark text-decoration-none d-inline-flex align-items-center gap-1">
+                {{ t('melodi_payment.montant', 'Montant') }} <img src="/static_base_icons?name=sort" style="width: 14px; height: 14px; opacity: 0.5;">
+              </a>
+            </th>
+            <th>{{ t('melodi_payment.moyen_provider', 'Moyen / Provider') }}</th>
+            <th>{{ t('melodi_payment.statut', 'Statut') }}</th>
+            <th>
+              <a href="/admin/melodi_payment/payments?sort=created_at&dir={% if sort_dir == 'asc' %}desc{% else %}asc{% endif %}" class="text-dark text-decoration-none d-inline-flex align-items-center gap-1">
+                {{ t('melodi_payment.date_creation', 'Date Création') }} <img src="/static_base_icons?name=sort" style="width: 14px; height: 14px; opacity: 0.5;">
+              </a>
+            </th>
+            <th class="text-end pe-3">{{ t('melodi_payment.actions', 'Actions') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if payments %}
+            {% for p in payments %}
+            <tr>
+              <td class="ps-3">
+                <a href="/admin/melodi_payment/detail?id={{ p.payment_id }}" class="fw-bold text-decoration-none text-primary">
+                  {{ p.reference }}
+                </a>
+                <div class="text-muted small" style="font-size: 0.72rem;"><code>{{ p.payment_id }}</code></div>
+              </td>
+              <td>
+                {% if p.source_type %}
+                <span class="badge bg-light text-dark border">{{ p.source_type }}: #{{ p.source_id }}</span>
+                {% else %}
+                <span class="text-muted small">{{ t('melodi_payment.manuel', 'Manuel') }}</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="fw-bold font-monospace">{{ "%.2f"|format(p.amount_float) }} {{ p.currency }}</span>
+              </td>
+              <td>
+                {% if p.method %}
+                <span class="badge bg-secondary-subtle text-secondary">{{ p.method }}</span>
+                {% if p.provider %}<small class="text-muted d-block" style="font-size: 0.7rem;">({{ p.provider }})</small>{% endif %}
+                {% else %}
+                <span class="text-muted small">—</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="badge 
+                  {% if p.status == 'succeeded' %}bg-success-subtle text-success
+                  {% elif p.status == 'pending' %}bg-warning-subtle text-warning
+                  {% elif p.status == 'processing' %}bg-info-subtle text-info
+                  {% elif p.status == 'failed' %}bg-danger-subtle text-danger
+                  {% elif p.status == 'cancelled' %}bg-secondary-subtle text-secondary
+                  {% elif p.status == 'refunded' %}bg-dark-subtle text-dark
+                  {% elif p.status == 'partially_refunded' %}bg-primary-subtle text-primary
+                  {% else %}bg-light text-dark{% endif %}">
+                  {{ p.status }}
+                </span>
+              </td>
+              <td class="small text-muted">{{ p.created_at[:16] if p.created_at else '' }}</td>
+              <td class="text-end pe-3">
+                <a href="/admin/melodi_payment/detail?id={{ p.payment_id }}" class="btn btn-sm btn-outline-secondary">
+                  {{ t('melodi_payment.details', 'Détails') }}
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="7" class="text-center py-4 text-muted small">
+                {{ t('melodi_payment.aucun_paiement_ne_correspond', 'Aucun paiement ne correspond aux critères sélectionnés.') }}
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination Footer -->
+    <div class="card-footer bg-white border-0 py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <small class="text-muted">Affichage page {{ page }} sur {{ total_pages }} ({{ total }} résultats)</small>
+      <nav>
+        <ul class="pagination pagination-sm mb-0">
+          <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+            <a class="page-link" href="/admin/melodi_payment/payments?page={{ page - 1 }}&q={{ filter_search }}&status={{ filter_status }}&provider={{ filter_provider }}&method={{ filter_method }}&currency={{ filter_currency }}">{{ t('melodi_payment.precedent', 'Précédent') }}</a>
+          </li>
+          <li class="page-item active">
+            <span class="page-link">{{ page }}</span>
+          </li>
+          <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+            <a class="page-link" href="/admin/melodi_payment/payments?page={{ page + 1 }}&q={{ filter_search }}&status={{ filter_status }}&provider={{ filter_provider }}&method={{ filter_method }}&currency={{ filter_currency }}">{{ t('melodi_payment.suivant', 'Suivant') }}</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Création Paiement Manuel -->
+<div class="modal fade" id="createPaymentModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="/admin/melodi_payment/payments">
+        <input type="hidden" name="action_type" value="create_payment">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold">{{ t('melodi_payment.creer_une_demande_de', 'Créer une Demande de Paiement') }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label small fw-bold">{{ t('melodi_payment.montant', 'Montant') }}</label>
+            <input type="number" step="0.01" name="amount" class="form-control" placeholder="10000" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-bold">{{ t('melodi_payment.devise', 'Devise') }}</label>
+            <input type="text" name="currency" class="form-control" value="XAF" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-bold">{{ t('melodi_payment.description_libelle', 'Description / Libellé') }}</label>
+            <input type="text" name="description" class="form-control" placeholder="{{ t('melodi_payment.ex_reglement_facture', 'Ex: Règlement facture manuelle') }}">
+          </div>
+          <div class="row">
+            <div class="col-6 mb-3">
+              <label class="form-label small fw-bold">{{ t('melodi_payment.type_source', 'Type Source') }}</label>
+              <input type="text" name="source_type" class="form-control" value="admin.manual">
+            </div>
+            <div class="col-6 mb-3">
+              <label class="form-label small fw-bold">{{ t('melodi_payment.id_source', 'ID Source') }}</label>
+              <input type="text" name="source_id" class="form-control" placeholder="MAN-001">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light" data-bs-dismiss="modal">{{ t('melodi_payment.annuler', 'Annuler') }}</button>
+          <button type="submit" class="btn btn-dark">{{ t('melodi_payment.enregistrer_la_demande', 'Enregistrer la demande') }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

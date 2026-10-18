@@ -1,0 +1,162 @@
+<div class="container-fluid py-3">
+  <!-- Header -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+    <div>
+      <h4 class="fw-bold mb-1 d-flex align-items-center gap-2">
+        <img src="/static_base_icons?name=history&fill=0d6efd" style="width: 24px; height: 24px;">
+        {{ t('melodi_payment.historique_des_tentatives_de', 'Historique des Tentatives de Paiement') }}
+      </h4>
+      <p class="text-muted small mb-0">{{ total }} tentative(s) enregistrée(s) dans le grand livre technique</p>
+    </div>
+  </div>
+
+  <!-- Search & Filter Card -->
+  <div class="card border-0 shadow-sm rounded-3 mb-4 p-3 bg-light">
+    <form method="GET" action="/admin/melodi_payment/attempts" class="row g-2 align-items-end">
+      <!-- Search Input -->
+      <div class="col-12 col-md-4">
+        <label class="form-label small fw-bold mb-1">{{ t('melodi_payment.recherche', 'Recherche') }}</label>
+        <div class="input-group input-group-sm">
+          <span class="input-group-text bg-white"><img src="/static_base_icons?name=search" style="width: 14px; height: 14px; opacity: 0.6;"></span>
+          <input type="text" name="q" value="{{ filter_search }}" class="form-control bg-white" placeholder="{{ t('melodi_payment.recherche_tentatives', 'ID tentative, référence externe, erreur...') }}">
+        </div>
+      </div>
+
+      <!-- Statut Filter -->
+      <div class="col-6 col-md-2">
+        <label class="form-label small fw-bold mb-1">{{ t('melodi_payment.statut', 'Statut') }}</label>
+        <select name="status" class="form-select form-select-sm bg-white">
+          <option value="">{{ t('melodi_payment.tous_statuts', 'Tous statuts') }}</option>
+          <option value="succeeded" {% if filter_status == 'succeeded' %}selected{% endif %}>{{ t('melodi_payment.succeeded', 'Succeeded') }}</option>
+          <option value="failed" {% if filter_status == 'failed' %}selected{% endif %}>{{ t('melodi_payment.failed', 'Failed') }}</option>
+          <option value="processing" {% if filter_status == 'processing' %}selected{% endif %}>{{ t('melodi_payment.processing', 'Processing') }}</option>
+          <option value="pending" {% if filter_status == 'pending' %}selected{% endif %}>{{ t('melodi_payment.pending', 'Pending') }}</option>
+        </select>
+      </div>
+
+      <!-- Provider Filter -->
+      <div class="col-6 col-md-2">
+        <label class="form-label small fw-bold mb-1">{{ t('melodi_payment.fournisseur', 'Fournisseur') }}</label>
+        <select name="provider" class="form-select form-select-sm bg-white">
+          <option value="">{{ t('melodi_payment.tous_providers', 'Tous providers') }}</option>
+          {% for p in providers %}
+          <option value="{{ p.provider_id }}" {% if filter_provider == p.provider_id %}selected{% endif %}>{{ p.name or p.provider_id }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Méthode Filter -->
+      <div class="col-6 col-md-2">
+        <label class="form-label small fw-bold mb-1">{{ t('melodi_payment.methode', 'Méthode') }}</label>
+        <select name="method" class="form-select form-select-sm bg-white">
+          <option value="">{{ t('melodi_payment.toutes_methodes', 'Toutes méthodes') }}</option>
+          {% for m in methods %}
+          <option value="{{ m.method_id }}" {% if filter_method == m.method_id %}selected{% endif %}>{{ m.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Actions -->
+      <div class="col-6 col-md-2 d-flex gap-2">
+        <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><img src="/static_base_icons?name=filter_alt&fill=white" style="width: 14px; height: 14px;" class="me-1">{{ t('melodi_payment.filtrer', 'Filtrer') }}</button>
+        <a href="/admin/melodi_payment/attempts" class="btn btn-outline-secondary btn-sm"><img src="/static_base_icons?name=close" style="width: 14px; height: 14px;"></a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Table Card -->
+  <div class="card border-0 shadow-sm rounded-3">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-3">{{ t('melodi_payment.id_tentative', 'ID Tentative') }}</th>
+            <th>{{ t('melodi_payment.paiement_parent', 'Paiement Parent') }}</th>
+            <th>{{ t('melodi_payment.moyen', 'Moyen') }}</th>
+            <th>{{ t('melodi_payment.provider', 'Provider') }}</th>
+            <th>{{ t('melodi_payment.ref_externe', 'Réf. Externe') }}</th>
+            <th>{{ t('melodi_payment.statut', 'Statut') }}</th>
+            <th>{{ t('melodi_payment.date', 'Date') }}</th>
+            <th class="text-end pe-3">{{ t('melodi_payment.details_techniques', 'Détails Techniques') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if attempts %}
+            {% for a in attempts %}
+            <tr>
+              <td class="ps-3 font-monospace small"><code>{{ a.attempt_id }}</code></td>
+              <td>
+                <a href="/admin/melodi_payment/detail?id={{ a.payment_id }}" class="fw-bold text-decoration-none text-primary">
+                  {{ a.payment_ref }}
+                </a>
+              </td>
+              <td>{{ a.method }}</td>
+              <td><span class="badge bg-light text-dark border">{{ a.provider }}</span></td>
+              <td><small class="font-monospace text-muted">{{ a.provider_reference or '—' }}</small></td>
+              <td>
+                <span class="badge 
+                  {% if a.status == 'succeeded' %}bg-success
+                  {% elif a.status == 'failed' %}bg-danger
+                  {% elif a.status == 'processing' %}bg-info
+                  {% else %}bg-secondary{% endif %}">
+                  {{ a.status }}
+                </span>
+              </td>
+              <td class="small text-muted">{{ a.created_at[:16] if a.created_at else '' }}</td>
+              <td class="text-end pe-3">
+                <button class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#metaModal{{ a.id }}">
+                  <img src="/static_base_icons?name=code" style="width: 14px; height: 14px;"> {{ t('melodi_payment.payload', 'Payload') }}
+                </button>
+
+                <!-- Modal Inspection JSON -->
+                <div class="modal fade text-start" id="metaModal{{ a.id }}" tabindex="-1">
+                  <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h6 class="modal-title fw-bold">{{ t('melodi_payment.diagnostic_tentative', 'Diagnostic Tentative :') }} <code>{{ a.attempt_id }}</code></h6>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                      </div>
+                      <div class="modal-body">
+                        {% if a.error_message %}
+                        <div class="alert alert-danger small mb-3">
+                          <strong>{{ t('melodi_payment.erreur', 'Erreur :') }}</strong> {{ a.error_message }} (Code : {{ a.error_code }})
+                        </div>
+                        {% endif %}
+                        <h6 class="fw-bold small mb-1">{{ t('melodi_payment.metadonnees_de_requete', 'Métadonnées de Requête') }}</h6>
+                        <pre class="bg-light p-2 rounded small" style="max-height: 150px; overflow-y: auto;">{{ a.request_metadata | tojson(indent=2) if a.request_metadata else '{}' }}</pre>
+
+                        <h6 class="fw-bold small mb-1 mt-3">{{ t('melodi_payment.metadonnees_de_reponse_passerelle', 'Métadonnées de Réponse Passerelle') }}</h6>
+                        <pre class="bg-light p-2 rounded small" style="max-height: 150px; overflow-y: auto;">{{ a.response_metadata | tojson(indent=2) if a.response_metadata else '{}' }}</pre>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="8" class="text-center py-4 text-muted small">{{ t('melodi_payment.aucune_tentative_trouvee', 'Aucune tentative trouvée.') }}</td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination Footer -->
+    <div class="card-footer bg-white border-0 py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <small class="text-muted">Affichage page {{ page }} sur {{ total_pages }} ({{ total }} résultats)</small>
+      <nav>
+        <ul class="pagination pagination-sm mb-0">
+          <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+            <a class="page-link" href="/admin/melodi_payment/attempts?page={{ page - 1 }}&q={{ filter_search }}&status={{ filter_status }}&provider={{ filter_provider }}&method={{ filter_method }}">{{ t('melodi_payment.precedent', 'Précédent') }}</a>
+          </li>
+          <li class="page-item active"><span class="page-link">{{ page }}</span></li>
+          <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+            <a class="page-link" href="/admin/melodi_payment/attempts?page={{ page + 1 }}&q={{ filter_search }}&status={{ filter_status }}&provider={{ filter_provider }}&method={{ filter_method }}">{{ t('melodi_payment.suivant', 'Suivant') }}</a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+</div>

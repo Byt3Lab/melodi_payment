@@ -1,0 +1,269 @@
+<div class="container-fluid py-3">
+  <!-- Header Title -->
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+    <div>
+      <h4 class="fw-bold mb-1 d-flex align-items-center gap-2">
+        <img src="/static_base_icons?name=insights&fill=0d6efd" style="width: 24px; height: 24px;">
+        {{ t('melodi_payment.tableau_de_bord_infrastructure', 'Tableau de bord — Infrastructure de Paiement') }}
+      </h4>
+      <p class="text-muted small mb-0">{{ t('melodi_payment.supervision_en_temps_reel', 'Supervision en temps réel des transactions, volumes encaissés et état des passerelles') }}</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="/admin/melodi_payment/reconciliation" class="btn btn-outline-secondary btn-sm shadow-sm d-flex align-items-center gap-2">
+        <img src="/static_base_icons?name=sync_alt" style="width: 14px; height: 14px;">
+        <span>{{ t('melodi_payment.rapprochement', 'Rapprochement') }}</span>
+      </a>
+      <a href="/admin/melodi_payment/payments" class="btn btn-dark btn-sm shadow-sm d-flex align-items-center gap-2 px-3">
+        <img src="/static_base_icons?name=list&fill=white" style="width: 14px; height: 14px;">
+        <span>{{ t('melodi_payment.tous_les_paiements', 'Tous les Paiements') }}</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- KPI Row -->
+  <div class="row g-3 mb-4">
+    <!-- Aujourd'hui -->
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="card border-0 shadow-sm rounded-3 p-3 h-100 bg-body">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span class="text-muted x-small uppercase fw-bold">{{ t('melodi_payment.aujourd_hui', 'Aujourd\'hui') }}</span>
+          <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-1"><img src="/static_base_icons?name=today&fill=0d6efd" style="width: 14px; height: 14px;" class="me-1"> {{ t('melodi_payment.24h', '24h') }}</span>
+        </div>
+        <h3 class="fw-bold mb-0 text-dark font-monospace">{{ "%.2f"|format(stats.today_volume) }}</h3>
+        <small class="text-muted mt-1 d-block x-small">{{ stats.today_count }} transaction(s) aujourd'hui</small>
+      </div>
+    </div>
+
+    <!-- Encaissé (Succès) -->
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="card border-0 shadow-sm rounded-3 p-3 h-100 bg-body">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span class="text-muted x-small uppercase fw-bold">{{ t('melodi_payment.total_encaisse', 'Total Encaissé') }}</span>
+          <span class="badge bg-success-subtle text-success rounded-pill px-2 py-1"><img src="/static_base_icons?name=check_circle&fill=198754" style="width: 14px; height: 14px;" class="me-1"> {{ t('melodi_payment.succeeded', 'Succeeded') }}</span>
+        </div>
+        <h3 class="fw-bold mb-0 text-success font-monospace">{{ "%.2f"|format(stats.succeeded_volume) }}</h3>
+        <small class="text-muted mt-1 d-block x-small">{{ stats.succeeded_count }} paiement(s) validé(s)</small>
+      </div>
+    </div>
+
+    <!-- En Attente / En Cours -->
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="card border-0 shadow-sm rounded-3 p-3 h-100 bg-body">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span class="text-muted x-small uppercase fw-bold">{{ t('melodi_payment.en_attente_en_cours', 'En Attente / En cours') }}</span>
+          <span class="badge bg-warning-subtle text-warning rounded-pill px-2 py-1"><img src="/static_base_icons?name=schedule&fill=ffc107" style="width: 14px; height: 14px;" class="me-1"> {{ t('melodi_payment.pending', 'Pending') }}</span>
+        </div>
+        <h3 class="fw-bold mb-0 text-warning font-monospace">{{ stats.pending_count }}</h3>
+        <small class="text-muted mt-1 d-block x-small">{{ t('melodi_payment.necessitent_validation_ou_finalisation', 'Nécessitent validation ou finalisation') }}</small>
+      </div>
+    </div>
+
+    <!-- Remboursements -->
+    <div class="col-12 col-sm-6 col-xl-3">
+      <div class="card border-0 shadow-sm rounded-3 p-3 h-100 bg-body">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <span class="text-muted x-small uppercase fw-bold">{{ t('melodi_payment.remboursements', 'Remboursements') }}</span>
+          <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-1"><img src="/static_base_icons?name=undo&fill=dc3545" style="width: 14px; height: 14px;" class="me-1"> {{ t('melodi_payment.refunded', 'Refunded') }}</span>
+        </div>
+        <h3 class="fw-bold mb-0 text-danger font-monospace">{{ "%.2f"|format(stats.total_refunded_volume) }}</h3>
+        <small class="text-muted mt-1 d-block x-small">{{ stats.refunded_count }} remboursement(s)</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts & Distributions Row -->
+  <div class="row g-4 mb-4">
+    <!-- Évolution 7 jours -->
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm rounded-3 p-3 h-100">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+            <img src="/static_base_icons?name=bar_chart&fill=0d6efd" style="width: 18px; height: 18px;">
+            {{ t('melodi_payment.activite_des_7_derniers', 'Activité des 7 derniers jours') }}
+          </h6>
+          <span class="badge bg-light text-muted border">{{ t('melodi_payment.volumes_valides', 'Volumes validés') }}</span>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-2">{{ t('melodi_payment.date', 'Date') }}</th>
+                <th>{{ t('melodi_payment.transactions', 'Transactions') }}</th>
+                <th>{{ t('melodi_payment.volume_valide', 'Volume Validé') }}</th>
+                <th style="width: 40%;">{{ t('melodi_payment.progression_visuelle', 'Progression visuelle') }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for day in stats.recent_days %}
+              <tr>
+                <td class="ps-2 fw-bold text-muted small">{{ day.date }}</td>
+                <td><span class="badge bg-light text-dark border">{{ day.count }}</span></td>
+                <td class="font-monospace fw-bold">{{ "%.2f"|format(day.volume) }}</td>
+                <td>
+                  <div class="progress" style="height: 8px;">
+                    <div class="progress-bar bg-success" role="progressbar" 
+                         style="width: {{ [day.volume / (stats.succeeded_volume or 1.0) * 100, 100]|min }}%;"></div>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Répartition par Statut -->
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm rounded-3 p-3 h-100">
+        <h6 class="fw-bold mb-3 text-dark d-flex align-items-center gap-2">
+          <img src="/static_base_icons?name=pie_chart&fill=0dcaf0" style="width: 18px; height: 18px;">
+          {{ t('melodi_payment.repartition_des_statuts', 'Répartition des Statuts') }}
+        </h6>
+        <div class="d-flex flex-column gap-2">
+          {% for st, count in stats.by_status.items() %}
+          <div class="d-flex justify-content-between align-items-center p-2 rounded bg-light">
+            <span class="small fw-bold d-flex align-items-center gap-1">
+              {% if st == 'succeeded' %}<img src="/static_base_icons?name=check_circle&fill=198754" style="width: 14px; height: 14px;"> Réussi
+              {% elif st == 'pending' %}<img src="/static_base_icons?name=schedule&fill=ffc107" style="width: 14px; height: 14px;"> En attente
+              {% elif st == 'processing' %}<img src="/static_base_icons?name=sync_alt&fill=0dcaf0" style="width: 14px; height: 14px;"> En cours
+              {% elif st == 'failed' %}<img src="/static_base_icons?name=close&fill=dc3545" style="width: 14px; height: 14px;"> Échoué
+              {% elif st == 'cancelled' %}<img src="/static_base_icons?name=block&fill=6c757d" style="width: 14px; height: 14px;"> Annulé
+              {% elif st == 'refunded' %}<img src="/static_base_icons?name=undo&fill=212529" style="width: 14px; height: 14px;"> Remboursé
+              {% elif st == 'partially_refunded' %}<img src="/static_base_icons?name=undo&fill=0d6efd" style="width: 14px; height: 14px;"> Remb. Partiel
+              {% else %}<img src="/static_base_icons?name=circle&fill=6c757d" style="width: 14px; height: 14px;"> {{ st }}{% endif %}
+            </span>
+            <span class="badge bg-white text-dark border font-monospace">{{ count }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Connecteurs & Méthodes Disponibles -->
+  <div class="row g-4 mb-4">
+    <!-- Providers Connectés -->
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm rounded-3 p-3 h-100">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+            <img src="/static_base_icons?name=hub&fill=0d6efd" style="width: 18px; height: 18px;">
+            {{ t('melodi_payment.connecteurs_passerelles_providers', 'Connecteurs Passerelles (Providers)') }}
+          </h6>
+          <a href="/admin/melodi_payment/providers" class="btn btn-sm btn-link text-decoration-none">{{ t('melodi_payment.voir_tout', 'Voir tout') }}</a>
+        </div>
+        <p class="text-muted small mb-3">{{ t('melodi_payment.passerelles_de_paiement_externes', 'Passerelles de paiement externes enregistrées dynamiquement via les Hooks') }}</p>
+        {% if providers %}
+        <div class="list-group list-group-flush">
+          {% for p in providers %}
+          <div class="list-group-item px-0 d-flex justify-content-between align-items-center">
+            <div>
+              <span class="fw-bold d-block">{{ p.name or p.provider_id }}</span>
+              <small class="text-muted font-monospace">ID: {{ p.provider_id }}</small>
+            </div>
+            <div>
+              {% for c in p.capabilities or [] %}
+              <span class="badge bg-light text-dark border x-small">{{ c }}</span>
+              {% endfor %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-light border small mb-0">{{ t('melodi_payment.aucun_connecteur_tiers_actif', 'Aucun connecteur tiers actif. Activez par exemple') }} <code>{{ t('melodi_payment.melodi_example_payment', 'melodi_example_payment') }}</code>.</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Méthodes Actives -->
+    <div class="col-md-6">
+      <div class="card border-0 shadow-sm rounded-3 p-3 h-100">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+            <img src="/static_base_icons?name=payments&fill=198754" style="width: 18px; height: 18px;">
+            {{ t('melodi_payment.moyens_de_paiement_disponibles', 'Moyens de Paiement Disponibles') }}
+          </h6>
+          <a href="/admin/melodi_payment/methods" class="btn btn-sm btn-link text-decoration-none">{{ t('melodi_payment.voir_tout', 'Voir tout') }}</a>
+        </div>
+        <p class="text-muted small mb-3">{{ t('melodi_payment.moyens_de_paiement_eligibles', 'Moyens de paiement éligibles pour les encaissements') }}</p>
+        {% if methods %}
+        <div class="d-flex flex-wrap gap-2">
+          {% for m in methods %}
+          <div class="badge bg-white text-dark border p-2 shadow-sm d-flex align-items-center gap-2">
+            <img src="/static_base_icons?name=credit_card&fill=0d6efd" style="width: 18px; height: 18px;">
+            <div class="text-start">
+              <span class="fw-bold d-block">{{ m.name }}</span>
+              <small class="text-muted" style="font-size: 0.75rem;">{{ m.provider }} ({{ m.supported_currencies|join(', ') }})</small>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-light border small mb-0">{{ t('melodi_payment.aucun_moyen_de_paiement', 'Aucun moyen de paiement déclaré par les modules actifs.') }}</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Derniers Paiements Enregistrés -->
+  <div class="card border-0 shadow-sm rounded-3">
+    <div class="card-header bg-white border-0 pt-3 pb-2 px-3 d-flex justify-content-between align-items-center">
+      <h6 class="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
+        <img src="/static_base_icons?name=history&fill=6c757d" style="width: 18px; height: 18px;">
+        {{ t('melodi_payment.dernieres_transactions', 'Dernières Transactions') }}
+      </h6>
+      <a href="/admin/melodi_payment/payments" class="btn btn-sm btn-outline-dark">{{ t('melodi_payment.consulter_la_liste_complete', 'Consulter la liste complète') }}</a>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-3">{{ t('melodi_payment.reference', 'Référence') }}</th>
+            <th>{{ t('melodi_payment.source', 'Source') }}</th>
+            <th>{{ t('melodi_payment.montant', 'Montant') }}</th>
+            <th>{{ t('melodi_payment.moyen', 'Moyen') }}</th>
+            <th>{{ t('melodi_payment.statut', 'Statut') }}</th>
+            <th>{{ t('melodi_payment.date', 'Date') }}</th>
+            <th class="text-end pe-3">{{ t('melodi_payment.action', 'Action') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if recent_payments %}
+            {% for p in recent_payments %}
+            <tr>
+              <td class="ps-3">
+                <a href="/admin/melodi_payment/detail?id={{ p.payment_id }}" class="fw-bold text-decoration-none text-primary">
+                  {{ p.reference }}
+                </a>
+              </td>
+              <td><span class="badge bg-light text-dark border">{{ p.source_type or 'Manuel' }}</span></td>
+              <td class="font-monospace fw-bold">{{ "%.2f"|format(p.amount_float) }} {{ p.currency }}</td>
+              <td>{{ p.method or '—' }}</td>
+              <td>
+                <span class="badge 
+                  {% if p.status == 'succeeded' %}bg-success-subtle text-success
+                  {% elif p.status == 'pending' %}bg-warning-subtle text-warning
+                  {% elif p.status == 'processing' %}bg-info-subtle text-info
+                  {% elif p.status == 'failed' %}bg-danger-subtle text-danger
+                  {% elif p.status == 'refunded' %}bg-dark-subtle text-dark
+                  {% else %}bg-secondary-subtle text-secondary{% endif %}">
+                  {{ p.status }}
+                </span>
+              </td>
+              <td class="small text-muted">{{ p.created_at[:16] if p.created_at else '' }}</td>
+              <td class="text-end pe-3">
+                <a href="/admin/melodi_payment/detail?id={{ p.payment_id }}" class="btn btn-sm btn-outline-secondary">{{ t('melodi_payment.inspecter', 'Inspecter') }}</a>
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="7" class="text-center py-4 text-muted small">{{ t('melodi_payment.aucun_paiement_enregistre_pour', 'Aucun paiement enregistré pour le moment.') }}</td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
