@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from typing import Dict, Any, List, Optional, TYPE_CHECKING
+from core.utils.url import _url
 
 if TYPE_CHECKING:
     from core import Application
@@ -36,11 +37,11 @@ def resolve_payment_icon(icon: str | None) -> str:
     - Nom d'icône système (ex: 'payments', 'credit_card', 'phone_android') -> converti en /static_base_icons?name=<icon>.
     """
     if not icon:
-        return "/static_base_icons?name=payments&fill=%230d6efd"
+        return _url("icons", {"name": "payments", "fill": "#0d6efd"})
     icon = icon.strip()
     if icon.startswith("http://") or icon.startswith("https://") or icon.startswith("/"):
         return icon
-    return f"/static_base_icons?name={icon}"
+    return _url("icons", {"name": icon})
 
 
 @dataclass
